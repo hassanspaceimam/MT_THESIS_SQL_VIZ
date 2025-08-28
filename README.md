@@ -19,7 +19,6 @@ A small, production-lean pipeline that turns natural-language questions into **v
   </video>
 </p>
 
-[Direct link to the demo (mp4)](https://github.com/user-attachments/assets/ae2d5a46-1b93-4a79-95ee-ee8527f0a0e4)
 
 ---
 
