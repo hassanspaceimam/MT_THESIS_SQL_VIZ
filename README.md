@@ -1,4 +1,4 @@
-# SQL/BI Agent — NLQ ➜ Snowflake SQL ➜ Visualization
+#  LLM-Powered AI Agent to facilitate Natural Language Queries in SQL Databases
 
 A small, production‑lean pipeline that turns natural‑language questions into **validated Snowflake SQL**, executes the query, and auto‑generates a **sensible Plotly visualization or table**. It ships with:
 - A **knowledge‑base builder** that introspects your Snowflake schema and lets an LLM write practical table/column descriptions.
