@@ -1,12 +1,25 @@
 #  LLM-Powered AI Agent to facilitate Natural Language Queries in SQL Databases
 
-A small, production‑lean pipeline that turns natural‑language questions into **validated Snowflake SQL**, executes the query, and auto‑generates a **sensible Plotly visualization or table**. It ships with:
-- A **knowledge‑base builder** that introspects your Snowflake schema and lets an LLM write practical table/column descriptions.
+A small, production-lean pipeline that turns natural-language questions into **validated Snowflake SQL**, executes the query, and auto-generates a **sensible Plotly visualization or table**. It ships with:
+- A **knowledge-base builder** that introspects your Snowflake schema and lets an LLM write practical table/column descriptions.
 - A set of **LangChain / LangGraph agents** that route questions, pick tables/columns, extract filters, generate SQL, validate/fix it, and render a chart.
 - A minimal **Streamlit UI** to try questions interactively and download the results/SQL/code.
 - A **CSV → Snowflake loader** that creates the demo Olist schema in your account from files under `csv_files/`.
 
 > This README uses **placeholders** — replace them with your values locally.
+
+---
+
+## Demo
+
+<p align="center">
+  <video src="https://github.com/user-attachments/assets/ae2d5a46-1b93-4a79-95ee-ee8527f0a0e4"
+         width="800" controls muted playsinline loop>
+    <a href="https://github.com/user-attachments/assets/ae2d5a46-1b93-4a79-95ee-ee8527f0a0e4">Watch the demo</a>
+  </video>
+</p>
+
+[Direct link to the demo (mp4)](https://github.com/user-attachments/assets/ae2d5a46-1b93-4a79-95ee-ee8527f0a0e4)
 
 ---
 
@@ -29,7 +42,7 @@ A small, production‑lean pipeline that turns natural‑language questions into
 
 ### 1) Prerequisites
 - **Python** 3.10+ (3.11 recommended)
-- Network access to **Snowflake** (read‑only is fine for the app; loader needs create table/constraints)
+- Network access to **Snowflake** (read-only is fine for the app; loader needs create table/constraints)
 - An **Azure OpenAI** deployment (e.g., `o4-mini`, `gpt-4o`, etc.) compatible with LangChain’s `AzureChatOpenAI`
 
 ### 2) Install dependencies
@@ -51,7 +64,7 @@ python-dotenv rapidfuzz
 ### 3) Create your `.env`
 See the template below. Keep it **local** and **private**.
 
-### 4) Download the CSVs (Olist / Brazilian E‑commerce)
+### 4) Download the CSVs (Olist / Brazilian E-commerce)
 **Download from Kaggle** and put all CSV files into the local folder **`./csv_files`** (create it if missing).  
 Dataset: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
@@ -73,14 +86,14 @@ csv_files/
 ```
 If you *must* version large data, consider Git LFS.
 
-### 5) (First‑time) Load the demo data into Snowflake
+### 5) (First-time) Load the demo data into Snowflake
 With the CSVs in `./csv_files/` (or point `DATA_DIR` to another folder), run:
 ```bash
 python create_mytables_snowflake.py
 ```
 This creates the warehouse (if permitted), DB/schema, loads tables, adds PK/FK constraints, and prints integrity checks.
 
-### 6) Build the knowledge‑base (one‑time per schema change)
+### 6) Build the knowledge-base (one-time per schema change)
 ```bash
 python build_knowledgebase.py
 ```
@@ -182,8 +195,8 @@ What it does:
 
 ## How it works
 
-### High‑level pipeline
-1. **Knowledge‑base builder** (`build_knowledgebase.py`)
+### High-level pipeline
+1. **Knowledge-base builder** (`build_knowledgebase.py`)
    - Samples each table (`SELECT * ORDER BY RANDOM() LIMIT 100`), reads `INFORMATION_SCHEMA.COLUMNS`, and asks the LLM to produce **concise, practical descriptions** for the table and each column (with 1–2 sample values).  
    - Output: `knowledgebase.pkl` mapping `{table_name: [table_desc, [[col, desc], ...]]}`.
 
@@ -193,20 +206,20 @@ What it does:
    - **Column selector** chooses only the columns needed (plus join keys) to answer/link subquestions.
 
 3. **Filter extraction** (`agents.py` ➜ `chain_filter_extractor`)
-   - Extracts WHERE‑like predicates from NL (e.g., `"last month"`, `"delivered"`, `"São Paulo"`).  
+   - Extracts WHERE-like predicates from NL (e.g., `"last month"`, `"delivered"`, `"São Paulo"`).  
    - `utils.fuzzy_match_filters` resolves categorical values to real DB values and can map **city phrases to state abbreviations** (e.g., “São Paulo” → `SP`).
 
 4. **SQL generation & validation**
    - **Generator** produces a single **Snowflake** query using known join keys and hints.
-   - **Validator** fixes common mistakes (CTEs, join paths, location fields) and returns a ready‑to‑run statement.
+   - **Validator** fixes common mistakes (CTEs, join paths, location fields) and returns a ready-to-run statement.
    - Execution uses a safety **`LIMIT 2000`** (appended for the run only).
 
 5. **Execution & visualization** (`sql_viz_workflow.py`)
-   - Executes SQL. If Snowflake errors, a **SQL‑fixer** prompt repairs it (bounded retries).
+   - Executes SQL. If Snowflake errors, a **SQL-fixer** prompt repairs it (bounded retries).
    - A **BI expert** prompt recommends the best chart/table.
-   - Plotly code is generated and then **silently auto‑fixed** until it runs. The Streamlit UI renders `fig`, `df_viz`, or a short `string_viz_result`.
+   - Plotly code is generated and then **silently auto-fixed** until it runs. The Streamlit UI renders `fig`, `df_viz`, or a short `string_viz_result`.
 
-### Dataset‑specific mapping hints (embedded)
+### Dataset-specific mapping hints (embedded)
 - “Total sales / revenue / GMV” → `SUM(order_payments.payment_value)`
 - Time trends → `orders.order_purchase_timestamp` (e.g., `DATE_TRUNC('month', ...)` with optional `TO_VARCHAR(..., 'YYYY-MM')`)
 - Reviews → `order_reviews.review_score`
@@ -239,7 +252,7 @@ What it does:
 ├─ build_knowledgebase.py               # Introspects Snowflake + LLM descriptions → knowledgebase.pkl
 ├─ agents.py                            # Router, subquestions, column selection, filters, SQL gen + validator
 ├─ config.py                            # Azure OpenAI + Snowflake engine setup; .env loader; KB path
-├─ nlq_to_viz_workflow.py               # Orchestrates end‑to‑end (router → columns → filters → SQL → viz)
+├─ nlq_to_viz_workflow.py               # Orchestrates end-to-end (router → columns → filters → SQL → viz)
 ├─ sql_viz_workflow.py                  # Validate/execute SQL; BI advice; generate/fix Plotly; run code
 ├─ streamlit_chat.py                    # Streamlit UI: ask, view SQL, viz, download results/code
 ├─ utils.py                             # Parsing helpers, code/SQL extraction, fuzzy filter matching
@@ -252,7 +265,7 @@ What it does:
 
 ## Common tasks
 
-### Rebuild the knowledge‑base after schema changes
+### Rebuild the knowledge-base after schema changes
 ```bash
 python build_knowledgebase.py
 ```
@@ -284,7 +297,7 @@ Edit `config.get_llm()`:
 Place files in `./csv_files` or set `DATA_DIR` to a folder that contains all eight CSVs listed above.
 
 **Permission errors creating warehouse/database/schema**  
-The loader prints `ℹ️ ... (permission?)` and continues. Ensure your role has the right grants, or pre‑create the objects and re‑run.
+The loader prints `ℹ️ ... (permission?)` and continues. Ensure your role has the right grants, or pre-create the objects and re-run.
 
 **`knowledgebase.pkl not found ...`**  
 Run `python build_knowledgebase.py`, or set `KNOWLEDGEBASE_PATH` correctly. The code also checks a couple of fallback locations.
@@ -293,7 +306,7 @@ Run `python build_knowledgebase.py`, or set `KNOWLEDGEBASE_PATH` correctly. The 
 Check names/values in `.env`. For Azure, the endpoint can be the resource base URL; the code normalizes full paths.
 
 **Snowflake connection errors**  
-- Verify network/VPN/allow‑lists and role/warehouse privileges.  
+- Verify network/VPN/allow-lists and role/warehouse privileges.  
 - Ensure `snowflake-connector-python` + `snowflake-sqlalchemy` are installed.  
 - Account string format must match your org/region (e.g., `ORG-ACC` style).
 
@@ -310,16 +323,16 @@ If SQL returns **zero rows**, the app will set `string_viz_result` to explain th
 ## Design notes & extensibility
 
 - **Safety:** Only `SELECT`/CTE queries are allowed; execution appends `LIMIT 2000`.
-- **Robust parsing:** Utilities extract fenced code/SQL and parse list‑like JSON/py‑literals defensively.
-- **Fuzzy filters:** Unicode‑aware matching, initials for Brazilian state abbreviations, and optional `rapidfuzz` acceleration.
+- **Robust parsing:** Utilities extract fenced code/SQL and parse list-like JSON/py-literals defensively.
+- **Fuzzy filters:** Unicode-aware matching, initials for Brazilian state abbreviations, and optional `rapidfuzz` acceleration.
 - **Pluggable BI:** The BI “what to plot” step is concise; swap in your house style or chart lib if you like.
-- **Adding new tables:** Re‑run the builder; if you add new logical **agents**, wire them in `AGENT_TABLES` and update the router prompt.
+- **Adding new tables:** Re-run the builder; if you add new logical **agents**, wire them in `AGENT_TABLES` and update the router prompt.
 
 ---
 
 ## Security & data governance
 
-- Use a **read‑only** Snowflake role for the app, and a separate role with create/alter for the loader.
+- Use a **read-only** Snowflake role for the app, and a separate role with create/alter for the loader.
 - Keep `.env` and `csv_files/` out of version control (`.gitignore`), or use a secret manager / data registry in deployment.
 - Rotate Azure OpenAI/Snowflake secrets regularly and **immediately** if shared outside your org.
 - The Streamlit app is for internal use; don’t expose it publicly without authentication and rate limits.
@@ -328,10 +341,8 @@ If SQL returns **zero rows**, the app will set `string_viz_result` to explain th
 
 ## License
 
-Choose a license that fits your org; for open source, **MIT** is a common default.
-
 ```text
 MIT License
-Copyright (c) 2025 <Your Name/Org>
+Copyright (c) 2025 
 Permission is hereby granted, free of charge, to any person obtaining a copy...
 ```
